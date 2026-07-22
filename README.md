@@ -10,7 +10,7 @@ The delta between plan and reality is the product: Ilana exists to answer "I pla
 | --- | --- | --- |
 | 0 | Local data layer, activity tree, goals, session logging (timer + manual) | Done |
 | 1 | Planned blocks, Today screen, day-level planned vs actual | Done |
-| 2 | PWA shell (manifest, service worker, install) | Not started |
+| 2 | PWA shell (manifest, service worker, install) | Done |
 | 3 | Sync server + protocol (rows already carry `updated_at`, `deleted_at`, `dirty`) | Not started |
 | 4 | Week/month reports, trends | Basic version shipped early in Review; build the rest against real data |
 
@@ -27,6 +27,17 @@ bun run dev      # dev server
 bun run check    # svelte-check
 bun run build    # static build to ./build
 ```
+
+## Installing on a phone
+
+Open the deployed URL and add it to the home screen — Chrome on Android offers
+"Install app" from the ⋮ menu, Safari on iOS uses Share → "Add to Home Screen".
+It then launches standalone, with no browser chrome.
+
+Everything works with the network off: `src/service-worker.ts` precaches the
+shell so a cold start offline still reaches a usable logging screen, and all
+data lives in IndexedDB. Reads *and* writes work offline — logging a session on
+a plane behaves exactly like logging one at a desk.
 
 ## Deploying (Docker / Coolify)
 

@@ -23,7 +23,6 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	<title>Ilana</title>
-	<meta name="theme-color" content="#191824" />
 </svelte:head>
 
 <header class="top">

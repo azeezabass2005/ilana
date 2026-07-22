@@ -17,7 +17,7 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=frontend /app/build /usr/share/nginx/html
 
-EXPOSE 8080
+EXPOSE 3000 8080
 # 127.0.0.1, not localhost: it skips name resolution entirely, so the check
 # can't land on an address nginx isn't bound to.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \

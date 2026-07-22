@@ -106,6 +106,7 @@ planned_block
   activity_id      uuid
   plan_date        text (YYYY-MM-DD, local)
   planned_minutes  integer
+  label            text, nullable                  -- e.g. "assignment 3"
   start_time       text (HH:MM, local), nullable   -- null = unscheduled, just "today"
   planned_qty      real, nullable                  -- e.g. 30
   planned_unit     text, nullable                  -- e.g. "pages"
@@ -117,6 +118,19 @@ planned_block
 
 A block is never "completed". It is not a checkbox. It is compared against sessions.
 
+`label` is where one-off intent lives. "Do assignment 3" and "read chapter 7"
+are true for an afternoon, so making them activities would mean maintaining
+entities that outlive their usefulness and clutter every picker forever. The
+activity stays the permanent thing (CSC 306), and the block says what
+specifically it was for that day. When a session is logged against a labelled
+block the label seeds the session's `note`, so reality inherits the wording of
+the intent and reports stay readable.
+
+The dividing line against creating a child activity: use a label when the
+intent lives for a session or two, and a child activity marked `done` when it
+spans days and deserves its own total. Marking it done removes it from the
+pickers while keeping its history.
+
 ### 3.5 session
 
 What actually happened. This is the only source of truth for any number in any report.
@@ -126,6 +140,7 @@ session
   id                uuid
   activity_id       uuid
   planned_block_id  uuid, nullable    -- link to intent, if there was one
+  unplanned         integer (0|1)     -- explicitly kept off the plan
   started_at        integer (epoch ms)
   duration_seconds  integer
   note              text, nullable
@@ -133,6 +148,19 @@ session
   updated_at        integer
   deleted_at        integer, nullable
 ```
+
+**Pairing sessions with blocks is derived, not stored.** `planned_block_id`
+records what was known at logging time, but work is routinely logged before the
+plan is written, and that time still belongs to the block once it exists. So a
+session counts toward a block on the same day when the block is for the same
+activity, or for any ancestor of it — planning "CSC 306" covers time logged
+against "CSC 306 / Problem sets". Where an activity has several blocks in a
+day, the first takes the session whole; sessions are never split.
+
+`unplanned` is the opt-out, and the only thing that keeps matching time off the
+plan. It exists because a null `planned_block_id` is ambiguous on its own: it
+cannot distinguish "no plan existed yet" from "this deliberately wasn't the
+planned work".
 
 `ended_at` is derived, not stored. Storing start + duration makes retroactive entry ("I read for about 40 minutes this morning") trivial, which matters because most logging is retroactive.
 
@@ -268,5 +296,5 @@ Phase 4 will be tempting during Phase 0. Skipping ahead means designing dashboar
 
 - Time zone handling. Everything is local time with dates as YYYY-MM-DD strings. Adequate unless the devices ever end up in different zones. Revisit only if that happens.
 - Whether unaccounted time should be estimated against a configured waking window or just left blank. Leaning toward showing it, because the gap is informative.
-- Retroactive planning, meaning editing yesterday's plan after the fact. It corrupts the adherence number. Probably lock plans at end of day. Undecided.
+- Retroactive planning, meaning editing yesterday's plan after the fact. It corrupts the adherence number. Probably lock plans at end of day. Undecided, and now sharper: since pairing is derived (§3.5), a plan written after the work counts toward adherence. That is right for same-day planning, which is the common case, but it does leave the door open to writing yesterday's plan to match what happened. Locking past days is still the likely answer.
 - Whether measures need a canonical unit list to prevent "page" and "pages" fragmenting the totals. Autocomplete from history may be enough.

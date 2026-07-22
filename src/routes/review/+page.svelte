@@ -11,7 +11,7 @@
 		indexById,
 		effectiveGoals
 	} from '$lib/repo';
-	import { dayStats } from '$lib/derive';
+	import { rangeStats } from '$lib/derive';
 
 	type Range = 'day' | 'week' | 'month' | 'all';
 	let range = $state<Range>('week');
@@ -44,7 +44,7 @@
 	});
 
 	const byId = $derived(indexById($activities ?? []));
-	const stats = $derived(dayStats($blocks ?? [], $sessions ?? []));
+	const stats = $derived(rangeStats($blocks ?? [], $sessions ?? [], byId));
 
 	// minutes per goal — a goal is a tag, so shares can overlap and need not sum to 100
 	const perGoal = $derived.by(() => {

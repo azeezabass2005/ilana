@@ -16,11 +16,41 @@
 		buildTree
 	} from '$lib/repo';
 
+	import { browser } from '$app/environment';
+
 	const activities = liveQuery(() => liveActivities());
 	const goals = liveQuery(() => liveGoals());
 	const tags = liveQuery(() => liveTags());
 
-	const byParent = $derived(buildTree($activities ?? []));
+	// Finished work piles up here forever otherwise — that's what makes this
+	// page long over a term, more than nesting does.
+	let showDone = $state(false);
+	const visible = $derived(($activities ?? []).filter((a) => showDone || a.status === 'active'));
+	const doneCount = $derived(($activities ?? []).filter((a) => a.status !== 'active').length);
+
+	const byParent = $derived(buildTree(visible));
+
+	// Collapsed by default: you come here to change one thing, not to read
+	// the whole tree. Expanded state persists so it doesn't reset every visit.
+	const EXPANDED_KEY = 'ilana.manage.expanded';
+	let expanded = $state<Set<string>>(new Set(loadExpanded()));
+
+	function loadExpanded(): string[] {
+		if (!browser) return [];
+		try {
+			return JSON.parse(localStorage.getItem(EXPANDED_KEY) ?? '[]') as string[];
+		} catch {
+			return [];
+		}
+	}
+
+	function toggleExpand(id: string) {
+		const next = new Set(expanded);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		expanded = next;
+		if (browser) localStorage.setItem(EXPANDED_KEY, JSON.stringify([...next]));
+	}
 	const tagsByActivity = $derived.by(() => {
 		const map = new Map<string, Set<string>>();
 		for (const t of $tags ?? []) {
@@ -155,10 +185,27 @@
 		<p class="muted intro">One tree. A project, a task, and a subtask are the same thing at different depths.</p>
 
 		{#snippet node(a: Activity, depth: number)}
+			{@const kids = byParent.get(a.id) ?? []}
+			{@const isOpen = expanded.has(a.id)}
 			<div class="act" style:margin-left={`${depth * 18}px`}>
 				<div class="actrow">
 					<div class="actname" class:dimmed={a.status !== 'active'}>
+						{#if kids.length > 0}
+							<button
+								class="twisty"
+								aria-expanded={isOpen}
+								onclick={() => toggleExpand(a.id)}
+								aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${a.title}`}
+							>
+								<svg class:open={isOpen} viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+									<path d="M6 3.5 10.5 8 6 12.5" />
+								</svg>
+							</button>
+						{:else}
+							<span class="twisty-spacer" aria-hidden="true"></span>
+						{/if}
 						<strong>{a.title}</strong>
+						{#if kids.length > 0 && !isOpen}<span class="mono kidcount">{kids.length}</span>{/if}
 						{#if a.status !== 'active'}<span class="mono muted">· {a.status}</span>{/if}
 						{#if a.default_unit}<span class="mono muted">· {a.default_unit}</span>{/if}
 						{#each [...(tagsByActivity.get(a.id) ?? [])] as gid (gid)}
@@ -219,9 +266,11 @@
 					</div>
 				{/if}
 
-				{#each byParent.get(a.id) ?? [] as child (child.id)}
-					{@render node(child, depth + 1)}
-				{/each}
+				{#if isOpen}
+					{#each kids as child (child.id)}
+						{@render node(child, depth + 1)}
+					{/each}
+				{/if}
 			</div>
 		{/snippet}
 
@@ -229,9 +278,21 @@
 			{#each byParent.get(null) ?? [] as root (root.id)}
 				{@render node(root, 0)}
 			{:else}
-				<p class="muted pad">No activities yet. Everything you plan or log hangs off this tree.</p>
+				<p class="muted pad">
+					{#if doneCount > 0}
+						Nothing active. {doneCount} finished {doneCount === 1 ? 'activity is' : 'activities are'} hidden.
+					{:else}
+						No activities yet. Everything you plan or log hangs off this tree.
+					{/if}
+				</p>
 			{/each}
 		</div>
+
+		{#if doneCount > 0}
+			<button class="linklike showdone" onclick={() => (showDone = !showDone)}>
+				{showDone ? 'hide' : 'show'} {doneCount} completed &amp; archived
+			</button>
+		{/if}
 
 		<div class="card addcard">
 			{#if addingUnder === 'root'}
@@ -351,6 +412,40 @@
 		align-items: center;
 		gap: 7px;
 		flex-wrap: wrap;
+	}
+	.twisty {
+		width: 26px;
+		height: 26px;
+		margin-left: -5px;
+		border-radius: 7px;
+		display: grid;
+		place-items: center;
+		color: var(--ink-500);
+		transition: background 0.12s ease;
+	}
+	.twisty:hover {
+		background: var(--surface-200);
+		color: var(--ink-950);
+	}
+	.twisty svg {
+		transition: transform 0.15s ease;
+	}
+	.twisty svg.open {
+		transform: rotate(90deg);
+	}
+	.twisty-spacer {
+		width: 21px;
+	}
+	.kidcount {
+		font-size: 0.66rem;
+		color: var(--ink-500);
+		background: var(--surface-200);
+		border-radius: 99px;
+		padding: 2px 8px;
+	}
+	.showdone {
+		margin-top: 10px;
+		justify-self: start;
 	}
 	.actname.dimmed strong {
 		color: var(--ink-300);

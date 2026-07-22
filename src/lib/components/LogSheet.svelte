@@ -10,6 +10,7 @@
 		knownUnits,
 		indexById
 	} from '$lib/repo';
+	import { findBlockFor } from '$lib/derive';
 	import ActivityPicker from './ActivityPicker.svelte';
 	import DatePicker from './DatePicker.svelte';
 	import TimeField from './TimeField.svelte';
@@ -29,6 +30,7 @@
 	let chosenBlockId = $state<string | null>(null);
 	let units = $state<string[]>([]);
 	let saving = $state(false);
+	let noteDirty = $state(false);
 
 	const quick = [15, 25, 45, 60, 90];
 	const fromTimer = $derived(logSheet.prefill.fromTimer ?? null);
@@ -42,6 +44,7 @@
 		startTime = p.fromTimer ? fmtClock(p.fromTimer.startedAt) : '';
 		durationMin = p.fromTimer ? Math.max(1, Math.round(p.fromTimer.durationSeconds / 60)) : 30;
 		note = '';
+		noteDirty = false;
 		qty = null;
 		unit = '';
 		asUnplanned = false;
@@ -68,14 +71,21 @@
 		const d = sessionDate;
 		return liveQuery(() => livePlannedBlocks(d));
 	});
-	const candidateBlocks = $derived(
-		($dayBlocks ?? []).filter((b) => b.activity_id === activityId)
+	// Same rule the reports use, so the sheet can't promise something the day
+	// then counts differently — including time on a sub-activity rolling up
+	// into a block planned on its parent.
+	const candidateBlock = $derived(
+		activityId ? findBlockFor($dayBlocks ?? [], activityId, byId) : null
 	);
-	const linkedBlockId = $derived(
-		asUnplanned
-			? null
-			: (chosenBlockId ?? (candidateBlocks.length > 0 ? candidateBlocks[0].id : null))
-	);
+	const linkedBlockId = $derived(asUnplanned ? null : (chosenBlockId ?? candidateBlock?.id ?? null));
+	const linkedBlock = $derived(($dayBlocks ?? []).find((b) => b.id === linkedBlockId) ?? null);
+
+	// A block's label is what you meant to do, so it becomes the session's note
+	// unless you've written your own — reality inherits the intent's wording.
+	$effect(() => {
+		const label = linkedBlock?.label;
+		if (label && !noteDirty) note = label;
+	});
 
 	function startedAtMs(): number {
 		if (endedJustNow) return Date.now() - durationMin * 60_000;
@@ -93,6 +103,7 @@
 				started_at: startedAtMs(),
 				duration_seconds: durationMin * 60,
 				planned_block_id: linkedBlockId,
+				unplanned: asUnplanned,
 				note,
 				measures: qty && unit.trim() ? [{ unit, quantity: qty }] : []
 			});
@@ -171,10 +182,12 @@
 			{/if}
 		{/if}
 
-		{#if candidateBlocks.length > 0}
+		{#if candidateBlock}
 			<div class="planline">
 				{#if !asUnplanned}
-					<span class="mono">Counts toward today's plan</span>
+					<span class="mono"
+						>Counts toward the plan{#if linkedBlock?.label}: <strong>{linkedBlock.label}</strong>{/if}</span
+					>
 					<button type="button" class="linklike" onclick={() => (asUnplanned = true)}>log as unplanned</button>
 				{:else}
 					<span class="mono muted">Logged as unplanned</span>
@@ -185,7 +198,10 @@
 
 		<details class="more">
 			<summary class="eyebrow">Note &amp; measure</summary>
-			<label class="field"><span>Note</span><input type="text" bind:value={note} placeholder="What happened?" /></label>
+			<label class="field">
+				<span>Note</span>
+				<input type="text" bind:value={note} oninput={() => (noteDirty = true)} placeholder="What happened?" />
+			</label>
 			<div class="row2">
 				<label class="field"><span>Quantity</span><input type="number" step="any" min="0" bind:value={qty} /></label>
 				<label class="field">

@@ -47,6 +47,12 @@ export interface PlannedBlock {
 	activity_id: string;
 	plan_date: string; // YYYY-MM-DD local
 	planned_minutes: number;
+	/**
+	 * What specifically this block is for ("assignment 3", "read ch. 7").
+	 * One-off intent lives here rather than as a child activity, so the tree
+	 * only holds things that recur. Unindexed, so no schema version bump.
+	 */
+	label: string | null;
 	start_time: string | null; // HH:MM local, null = unscheduled
 	planned_qty: number | null;
 	planned_unit: string | null;
@@ -61,6 +67,13 @@ export interface Session {
 	id: string;
 	activity_id: string;
 	planned_block_id: string | null;
+	/**
+	 * Explicitly kept off the plan (1) — you did this activity but it wasn't
+	 * the planned work. Without this, a null planned_block_id is ambiguous:
+	 * it can mean "no plan existed yet", which should still match a block
+	 * created later. Old rows have no value, which reads as "not opted out".
+	 */
+	unplanned?: number;
 	started_at: number; // epoch ms
 	duration_seconds: number;
 	note: string | null;

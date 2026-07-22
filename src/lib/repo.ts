@@ -181,6 +181,7 @@ export async function createPlannedBlock(input: {
 	activity_id: string;
 	plan_date: string;
 	planned_minutes: number;
+	label?: string | null;
 	start_time?: string | null;
 	planned_qty?: number | null;
 	planned_unit?: string | null;
@@ -191,6 +192,7 @@ export async function createPlannedBlock(input: {
 		activity_id: input.activity_id,
 		plan_date: input.plan_date,
 		planned_minutes: input.planned_minutes,
+		label: input.label?.trim() || null,
 		start_time: input.start_time ?? null,
 		planned_qty: input.planned_qty ?? null,
 		planned_unit: input.planned_unit ?? null,
@@ -206,7 +208,9 @@ export async function createPlannedBlock(input: {
 
 export async function updatePlannedBlock(
 	id: string,
-	patch: Partial<Pick<PlannedBlock, 'planned_minutes' | 'start_time' | 'planned_qty' | 'planned_unit' | 'sort_index'>>
+	patch: Partial<
+		Pick<PlannedBlock, 'planned_minutes' | 'label' | 'start_time' | 'planned_qty' | 'planned_unit' | 'sort_index'>
+	>
 ) {
 	await db.planned_block.update(id, stamp(patch));
 }
@@ -238,6 +242,7 @@ export async function logSession(input: {
 	started_at: number;
 	duration_seconds: number;
 	planned_block_id?: string | null;
+	unplanned?: boolean;
 	note?: string | null;
 	measures?: { unit: string; quantity: number }[];
 }): Promise<Session> {
@@ -245,6 +250,7 @@ export async function logSession(input: {
 		id: uuidv7(),
 		activity_id: input.activity_id,
 		planned_block_id: input.planned_block_id ?? null,
+		unplanned: input.unplanned ? 1 : 0,
 		started_at: input.started_at,
 		duration_seconds: Math.max(1, Math.round(input.duration_seconds)),
 		note: input.note?.trim() || null,
@@ -300,6 +306,26 @@ export function liveMeasuresFor(sessionIds: string[]) {
 export async function lastLoggedActivityId(): Promise<string | null> {
 	const last = await db.session.orderBy('started_at').filter((s) => s.deleted_at === null).last();
 	return last?.activity_id ?? null;
+}
+
+/**
+ * Distinct activities you logged most recently, newest first. The picker puts
+ * these on top: you log the same few things repeatedly, so the common case
+ * should need no typing and no scrolling.
+ */
+export async function recentActivityIds(limit = 5): Promise<string[]> {
+	const recent = await db.session
+		.orderBy('started_at')
+		.reverse()
+		.filter((s) => s.deleted_at === null)
+		.limit(200)
+		.toArray();
+	const out: string[] = [];
+	for (const s of recent) {
+		if (!out.includes(s.activity_id)) out.push(s.activity_id);
+		if (out.length >= limit) break;
+	}
+	return out;
 }
 
 /** distinct units seen in history, most recent first, for autocomplete */

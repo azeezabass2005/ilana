@@ -54,7 +54,7 @@
 			const dayBlocks = allBlocks.filter((b) => b.plan_date === d);
 			const [start, end] = dayBounds(d);
 			const sessions = allSessions.filter((s) => s.started_at >= start && s.started_at < end);
-			const stats = dayStats(dayBlocks, sessions);
+			const stats = dayStats(dayBlocks, sessions, byId);
 			days.push({
 				date: d,
 				planned: stats.plannedMinutes,
@@ -69,6 +69,7 @@
 	let newActivity = $state<string | null>(null);
 	let newMinutes = $state(60);
 	let newTime = $state('');
+	let newLabel = $state('');
 	let newQty = $state<number | null>(null);
 	let newUnit = $state('');
 
@@ -84,12 +85,14 @@
 			activity_id: newActivity,
 			plan_date: date,
 			planned_minutes: newMinutes,
+			label: newLabel,
 			start_time: newTime || null,
 			planned_qty: newQty,
 			planned_unit: newQty ? newUnit.trim() || null : null
 		});
 		newMinutes = 60;
 		newTime = '';
+		newLabel = '';
 		newQty = null;
 		newUnit = '';
 	}
@@ -141,11 +144,12 @@
 			<div class="card ledger">
 				{#each sortedBlocks as b (b.id)}
 					<div class="blockrow">
-						<div class="blockmain">
-							<strong>{title(b.activity_id)}</strong>
-							{#if b.planned_qty}<span class="mono muted">→ {b.planned_qty} {b.planned_unit}</span>{/if}
-						</div>
-						<div class="blockedit">
+						<div class="blocktop">
+							<div class="blockmain">
+								<strong>{title(b.activity_id)}</strong>
+								{#if b.planned_qty}<span class="mono muted">→ {b.planned_qty} {b.planned_unit}</span>{/if}
+							</div>
+							<div class="blockedit">
 							<Stepper
 								compact
 								value={b.planned_minutes}
@@ -160,8 +164,17 @@
 								value={b.start_time ?? ''}
 								onchange={(v) => updatePlannedBlock(b.id, { start_time: v || null })}
 							/>
-							<button class="btn-danger remove" onclick={() => softDeletePlannedBlock(b.id)} aria-label="Remove block">✕</button>
+								<button class="btn-danger remove" onclick={() => softDeletePlannedBlock(b.id)} aria-label="Remove block">✕</button>
+							</div>
 						</div>
+						<input
+							class="labelinput"
+							type="text"
+							value={b.label ?? ''}
+							placeholder="What exactly? e.g. assignment 3"
+							aria-label="What this block is for"
+							onchange={(e) => updatePlannedBlock(b.id, { label: e.currentTarget.value.trim() || null })}
+						/>
 					</div>
 				{/each}
 			</div>
@@ -184,6 +197,10 @@
 				<TimeField bind:value={newTime} />
 			</div>
 		</div>
+		<label class="field">
+			<span>What exactly? (optional)</span>
+			<input type="text" bind:value={newLabel} placeholder="assignment 3, read ch. 7…" />
+		</label>
 		<div class="row3">
 			<label class="field"><span>Target qty (optional)</span><input type="number" step="any" min="0" bind:value={newQty} /></label>
 			<label class="field"><span>Unit</span><input type="text" bind:value={newUnit} placeholder="pages…" /></label>
@@ -260,12 +277,25 @@
 		font-weight: 500;
 	}
 	.blockrow {
+		display: grid;
+		gap: 10px;
+		padding: 16px 0;
+	}
+	.blocktop {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: 12px;
-		padding: 14px 0;
 		flex-wrap: wrap;
+	}
+	.labelinput {
+		min-height: 42px;
+		padding: 10px 13px;
+		font-size: 0.88rem;
+		background: transparent;
+	}
+	.labelinput:not(:placeholder-shown) {
+		background: var(--surface-100);
 	}
 	.blockmain {
 		display: grid;

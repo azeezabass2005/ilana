@@ -25,7 +25,7 @@
 	});
 
 	const byId = $derived(indexById($activities ?? []));
-	const stats = $derived(dayStats($blocks ?? [], $sessions ?? []));
+	const stats = $derived(dayStats($blocks ?? [], $sessions ?? [], byId));
 	const unaccounted = $derived(Math.max(0, WAKING_MINUTES - stats.loggedMinutes));
 
 	function title(activityId: string): string {
@@ -117,6 +117,7 @@
 							<div class="blockname">
 								{#if path(b.block.activity_id)}<span class="eyebrow">{path(b.block.activity_id)}</span>{/if}
 								<strong>{title(b.block.activity_id)}</strong>
+								{#if b.block.label}<span class="blocklabel">{b.block.label}</span>{/if}
 								{#if b.block.start_time}<span class="mono muted">{b.block.start_time}</span>{/if}
 								{#if b.block.planned_qty}
 									<span class="mono muted">→ {b.block.planned_qty} {b.block.planned_unit}</span>
@@ -277,6 +278,10 @@
 	}
 	.blockname .eyebrow {
 		font-size: 0.6rem;
+	}
+	.blocklabel {
+		font-size: 0.85rem;
+		color: var(--accent-600);
 	}
 	.logbtn {
 		padding: 10px 18px;

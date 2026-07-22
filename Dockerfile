@@ -18,5 +18,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=frontend /app/build /usr/share/nginx/html
 
 EXPOSE 8080
+# 127.0.0.1, not localhost: it skips name resolution entirely, so the check
+# can't land on an address nginx isn't bound to.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \
-    CMD wget -q -O /dev/null "http://localhost:8080/healthz" || exit 1
+    CMD wget -q -O /dev/null "http://127.0.0.1:8080/healthz" || exit 1

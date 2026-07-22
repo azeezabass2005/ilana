@@ -76,13 +76,3 @@ src/routes/
   /review           day / week / month / all-time rollups
   /manage           activities, goals, tagging (infrequent, off prime nav)
 ```
-
-## Identity
-
-Shares DNA with the Amana brand system (calm base, deep ink, mono figures, one
-accent used sparingly) with its own modern voice: soft-white paper (`#F7F6F3`),
-white cards, near-black ink (`#191824`), an iris-indigo accent (`#5B5BD6`), and
-red ink (`#C6402C`) reserved for deficit figures only — like an accountant's
-ledger. Type: Instrument Sans + JetBrains Mono (all figures tabular mono).
-Semantic tokens (`--ink-*`, `--surface-*`, `--accent-*`) live in `src/app.css`,
-so a recolor is one block of CSS.

@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    # Phase 3 (sync server) adds:
+    #   volumes:
+    #     - ilana-data:/data   # SQLite survives redeploys

@@ -1,0 +1,314 @@
+/* ============================================================
+   Ilana design tokens — a personal time ledger.
+   Indigo on soft white: near-white paper, white cards, deep ink,
+   one iris accent used sparingly. Red ink appears only for
+   deficit figures — like an accountant's ledger.
+   ============================================================ */
+:root {
+	--ink-950: #191824;
+	--ink-700: #2f2e3e;
+	--ink-500: #62606e;
+	--ink-300: #8f8d9c;
+
+	--paper: #f7f6f3;
+	--surface-100: #ffffff;
+	--surface-200: #efeeea;
+	--surface-400: #dcdad3;
+
+	--accent-600: #5b5bd6;
+	--accent-300: #8b8be8;
+	--accent-200: #e0e0fa;
+
+	--redink: #c6402c; /* deficit figures only — never decoration */
+
+	--ink: var(--ink-950);
+	--sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+	--mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+	--radius: 16px;
+	--radius-sm: 11px;
+	--maxw: 640px;
+	--pad: clamp(16px, 4vw, 28px);
+	--shadow-card: 0 1px 2px rgba(25, 24, 36, 0.05);
+	--shadow-pop: 0 16px 40px rgba(25, 24, 36, 0.16);
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-family: var(--sans);
+	background: var(--paper);
+	color: var(--ink);
+	line-height: 1.55;
+	font-size: 16px;
+	-webkit-font-smoothing: antialiased;
+}
+
+::selection {
+	background: var(--accent-200);
+	color: var(--ink-950);
+}
+
+button {
+	font: inherit;
+	cursor: pointer;
+	border: none;
+	background: none;
+	color: inherit;
+}
+
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+a {
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent-600);
+	outline-offset: 2px;
+}
+
+/* ---------- text utilities ---------- */
+.mono {
+	font-family: var(--mono);
+	font-size: 0.8rem;
+	letter-spacing: 0.01em;
+	font-variant-numeric: tabular-nums;
+}
+
+.eyebrow {
+	font-family: var(--mono);
+	font-size: 0.68rem;
+	letter-spacing: 0.13em;
+	text-transform: uppercase;
+	color: var(--ink-500);
+}
+
+.muted {
+	color: var(--ink-500);
+}
+
+.figure {
+	font-family: var(--mono);
+	font-variant-numeric: tabular-nums;
+}
+
+.redink {
+	color: var(--redink);
+}
+
+/* red ink lightened for legibility on the dark ink card */
+.card--ink .redink {
+	color: #f0937f;
+}
+
+/* ---------- surfaces ---------- */
+.card {
+	background: var(--surface-100);
+	border: 1px solid var(--surface-400);
+	border-radius: var(--radius);
+	padding: 22px 20px;
+	box-shadow: var(--shadow-card);
+}
+
+.card--ink {
+	background: var(--ink-950);
+	border-color: var(--ink-950);
+	color: var(--surface-100);
+}
+
+.card--ink .eyebrow {
+	color: var(--ink-300);
+}
+
+.card--ink .muted {
+	color: var(--ink-300);
+}
+
+/* ledger rules: rows separated by fine lines, like ledger paper */
+.ledger > * + * {
+	border-top: 1px solid var(--surface-200);
+}
+
+.ledger-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 0;
+}
+
+/* ---------- controls ---------- */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-weight: 600;
+	font-size: 0.95rem;
+	border-radius: var(--radius-sm);
+	padding: 14px 22px;
+	width: max-content;
+	transition:
+		background 0.15s ease,
+		border-color 0.15s ease,
+		transform 0.06s ease;
+}
+
+.btn:active {
+	transform: scale(0.98);
+}
+
+.btn-primary {
+	background: var(--accent-600);
+	color: #fff;
+}
+
+.btn-primary:hover {
+	background: #4a4ac4;
+}
+
+.btn-ink {
+	background: var(--ink-950);
+	color: var(--surface-100);
+}
+
+.btn-ink:hover {
+	background: var(--ink-700);
+}
+
+.btn-ghost {
+	border: 1.5px solid var(--surface-400);
+	color: var(--ink-700);
+	background: var(--surface-100);
+}
+
+.btn-ghost:hover {
+	border-color: var(--ink-300);
+}
+
+.btn-danger {
+	color: var(--redink);
+}
+
+.btn-block {
+	width: 100%;
+}
+
+.field {
+	display: grid;
+	gap: 7px;
+	margin-bottom: 18px;
+}
+
+.field > span {
+	font-family: var(--mono);
+	font-size: 0.68rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--ink-500);
+}
+
+input[type='text'],
+input[type='number'],
+textarea {
+	background: var(--surface-100);
+	border: 1px solid var(--surface-400);
+	border-radius: var(--radius-sm);
+	padding: 13px 15px;
+	width: 100%;
+	min-height: 50px;
+	transition: border-color 0.12s ease;
+}
+
+input[type='text']:hover,
+input[type='number']:hover,
+textarea:hover {
+	border-color: var(--ink-300);
+}
+
+input[type='text']:focus-visible,
+input[type='number']:focus-visible,
+textarea:focus-visible {
+	outline: none;
+	border-color: var(--accent-600);
+	box-shadow: 0 0 0 3px var(--accent-200);
+}
+
+input[type='number'] {
+	font-family: var(--mono);
+	font-size: 0.95rem;
+	appearance: textfield;
+	-moz-appearance: textfield;
+}
+
+/* the browser spinner buttons never match the design — steppers do the job */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: var(--ink-300);
+}
+
+.chip {
+	font-family: var(--mono);
+	font-size: 0.8rem;
+	padding: 10px 15px;
+	border-radius: 99px;
+	border: 1px solid var(--surface-400);
+	background: var(--surface-100);
+	color: var(--ink-700);
+	min-height: 40px;
+	transition:
+		background 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease;
+}
+
+.chip:hover {
+	border-color: var(--ink-300);
+}
+
+.chip[aria-pressed='true'] {
+	background: var(--ink-950);
+	border-color: var(--ink-950);
+	color: var(--surface-100);
+}
+
+/* ---------- layout ---------- */
+.wrap {
+	max-width: var(--maxw);
+	margin: 0 auto;
+	padding: 0 var(--pad);
+}
+
+.stack {
+	display: grid;
+	gap: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}
